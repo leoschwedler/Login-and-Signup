@@ -83,7 +83,7 @@ private fun WelcomeContent(
                         containerColor = Color(0xFF1F41BB)
                     )
             ) {
-                Text(text = "Login", fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+                Text(text = "Login", fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = Color.White)
             }
             Spacer(Modifier.padding(10.dp))
             Button(

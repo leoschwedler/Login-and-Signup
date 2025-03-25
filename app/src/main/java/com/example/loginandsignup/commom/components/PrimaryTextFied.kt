@@ -32,12 +32,14 @@ fun PrimaryTextField(
     imeAction: ImeAction,
     onValueChange: (String) -> Unit,
     placeholder: String,
-    isErrorMessage: String? = null
+    isErrorMessage: String? = null,
+    isError: Boolean = false
 ) {
     var isVisiblePassword by remember { mutableStateOf(false) }
 
     Column {
         OutlinedTextField(
+            isError = isError,
             modifier = modifier.fillMaxWidth(),
             onValueChange = onValueChange,
             value = value,
@@ -53,22 +55,24 @@ fun PrimaryTextField(
             },
             visualTransformation = if (keyboardType == KeyboardType.Password) {
                 if (isVisiblePassword) {
-                    PasswordVisualTransformation()
-                } else {
                     VisualTransformation.None
+
+                } else {
+                    PasswordVisualTransformation()
                 }
             } else {
                 VisualTransformation.None
             },
             trailingIcon = {
-                val iconVisibility =
-                    if (keyboardType == KeyboardType.Password && isVisiblePassword == true) {
-                        R.drawable.ic_visibility
-                    } else {
+                if (keyboardType == KeyboardType.Password && value.isNotBlank()) {
+                    val iconVisibility = if (isVisiblePassword) {
                         R.drawable.ic_visibility_off
+                    } else {
+                        R.drawable.ic_visibility
                     }
-                IconButton(onClick = { isVisiblePassword = !isVisiblePassword }) {
-                    Icon(painter = painterResource(iconVisibility), contentDescription = null)
+                    IconButton(onClick = { isVisiblePassword = !isVisiblePassword }) {
+                        Icon(painter = painterResource(iconVisibility), contentDescription = null)
+                    }
                 }
             },
             shape = MaterialTheme.shapes.small,
@@ -76,13 +80,15 @@ fun PrimaryTextField(
                 focusedContainerColor = Color(0xFFF1F4FF),
                 unfocusedContainerColor = Color(0xFFF1F4FF),
                 unfocusedBorderColor = Color.Transparent,
+                errorBorderColor = Color.Red,
                 focusedBorderColor = Color(0xFF1F41BB),
                 focusedTrailingIconColor = Color(0xFF626262),
                 unfocusedTrailingIconColor = Color(0xFF626262),
-            )
+
+                )
         )
         isErrorMessage?.let {
-            Text(text = isErrorMessage)
+            Text(text = isErrorMessage, color = Color.Red)
         }
     }
 
