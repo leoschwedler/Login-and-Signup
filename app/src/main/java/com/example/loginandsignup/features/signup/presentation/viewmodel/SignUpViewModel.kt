@@ -2,6 +2,9 @@ package com.example.loginandsignup.features.signup.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.loginandsignup.commom.data.repository.AuthRepository
+import com.example.loginandsignup.commom.domain.SignupDomain
+import com.example.loginandsignup.commom.util.NetworkException
 import com.example.loginandsignup.commom.validator.FormValidator
 import com.example.loginandsignup.features.signup.presentation.action.SignUpAction
 import com.example.loginandsignup.features.signup.presentation.event.SignUpEvent
@@ -17,7 +20,10 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class SignUpViewModel @Inject constructor(private val formValidator: FormValidator<SignUpState>): ViewModel() {
+class SignUpViewModel @Inject constructor(
+    private val formValidator: FormValidator<SignUpState>,
+    private val authRepository: AuthRepository
+): ViewModel() {
 
     private val _uiState = MutableStateFlow(SignUpState())
     val uiState = _uiState.asStateFlow()
@@ -51,9 +57,32 @@ class SignUpViewModel @Inject constructor(private val formValidator: FormValidat
         if (isValidForm()){
             viewModelScope.launch {
                 _uiState.update { it.copy(isLoading = true) }
-                _uiEvent.send(SignUpEvent.showSnackbar(message = "Cadastro realizado com sucesso"))
-                delay(3000)
-                _uiEvent.send(SignUpEvent.navigateToLogin)
+                val domainLayer = SignupDomain(
+                    firstName = _uiState.value.email,
+                    lastName = "Schwedler",
+                    password = _uiState.value.password,
+                    profilePictureId = null,
+                    username = "Leozinho")
+                authRepository.signup(domainLayer).fold(
+                    onSuccess = {
+                        _uiState.update { it.copy(isLoading = false) }
+                        _uiEvent.send(SignUpEvent.showSnackbar(message = "User created successfully"))
+                        delay(1000)
+                        _uiEvent.send(SignUpEvent.navigateToLogin)
+                    },
+                    onFailure = {
+                        _uiState.update { it.copy(isLoading = false) }
+                        if (it is NetworkException.ApiException){
+                            when(it.statusCode){
+                                400 -> { _uiEvent.send(SignUpEvent.showSnackbar(message = "Invalid email or password")) }
+                                409 -> { _uiEvent.send(SignUpEvent.showSnackbar(message = "User already exists")) }
+                                else -> { _uiEvent.send(SignUpEvent.showSnackbar(message = "Something went wrong API")) }
+                            }
+                        }else{
+                            _uiEvent.send(SignUpEvent.showSnackbar(message = "Something went wrong"))
+                        }
+                    }
+                )
             }
         }
     }
